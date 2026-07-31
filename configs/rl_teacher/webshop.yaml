@@ -1,0 +1,25 @@
+benchmark: WebShop
+train_batch_size: 16
+validation_batch_size: 32
+ppo_mini_batch_size: 64
+ppo_micro_batch_size_per_gpu: 4
+rollout_micro_batch_size_per_gpu: 4
+logprob_micro_batch_size_per_gpu: 8
+tensor_parallel_size: 2
+actor_kl_loss:
+  enabled: true
+  coefficient: 0.01
+  type: low_var_kl
+policy_clipping:
+  lower: 0.2
+  upper: 0.2
+gigpo:
+  step_advantage_weight: 1.0
+  normalization: mean_norm
+rollout_gpu_memory_utilization: 0.6
+validation_before_training: true
+total_training_epochs: 100
+validation_frequency: 10
+checkpoint_frequency: 10
+num_gpus: 8
+max_env_steps: 15

@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.idea/
+.vscode/
+outputs/
+analysis_outputs/
+checkpoints/
+*.db
+*.log

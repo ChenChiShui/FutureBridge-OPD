@@ -1,0 +1,93 @@
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5.0pt}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Hyperparameter}
+&
+\textbf{ALFWorld RL Teacher}
+&
+\textbf{WebShop RL Teacher}
+\\
+\midrule
+Base model
+& Qwen3-8B
+& Qwen3-8B
+\\
+RL algorithm
+& GiGPO
+& GiGPO
+\\
+Optimizer
+& AdamW
+& AdamW
+\\
+Learning rate
+& $1\times10^{-6}$
+& $1\times10^{-6}$
+\\
+Weight decay
+& 0.01
+& 0.01
+\\
+Discount factor $\gamma$
+& 0.95
+& 0.95
+\\
+Rollout group size
+& 8
+& 8
+\\
+Invalid-action penalty
+& 0.1
+& 0.1
+\\
+Maximum prompt length
+& 4,096 tokens
+& 4,096 tokens
+\\
+Maximum response length
+& 512 tokens
+& 512 tokens
+\\
+Maximum environment interactions
+& 50
+& 15
+\\
+Train batch size
+& 32
+& 16
+\\
+PPO mini-batch size
+& 64
+& 64
+\\
+PPO micro-batch size per GPU
+& 4
+& 4
+\\
+Rollout micro-batch size per GPU
+& 4
+& 4
+\\
+Log-prob micro-batch size per GPU
+& 8
+& 8
+\\
+Tensor parallel size
+& 2
+& 2
+\\
+Number of GPUs
+& 8
+& 8
+\\
+\bottomrule
+\end{tabular}
+\caption{
+Configurations used to train the Qwen3-8B RL Teachers for ALFWorld
+and WebShop.
+}
+\label{tab:rl_teacher_settings}
+\end{table*}
