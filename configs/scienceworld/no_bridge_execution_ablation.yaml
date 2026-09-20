@@ -1,6 +1,6 @@
-project: "FutureBridge-OPD"
-name: "scienceworld_no_bridge_execution_ablation_rl_teacher"
-checkpoint_root_dir: outputs/checkpoints
+project: "SCIENCEWORLD_TCOD"
+name: "scienceworld_rfb_b2f_v31_qwen3"
+checkpoint_root_dir: {CHECKPOINT_ROOT}
 continue_from_checkpoint: false
 
 algorithm:
@@ -16,7 +16,7 @@ algorithm:
     lr: 1e-6
 
 model:
-  model_path: models/Qwen3-4B
+  model_path: <student-model>
   max_prompt_tokens: 10240
   max_response_tokens: 512
 
@@ -25,14 +25,14 @@ cluster:
   gpu_per_node: 8
 
 buffer:
-  total_steps: 200
+  total_steps: 250
   batch_size: 16
   train_batch_size: 64
   explorer_input:
     taskset:
       name: sciworld
       storage_type: file
-      path: data/scienceworld
+      path: {TCOD_DIR}/configs/scienceworld/sciworld_data
       split: train
       format:
         prompt_key: 'task_desc'
@@ -42,38 +42,38 @@ buffer:
       workflow_args:
         temperature: 1.0
         max_env_steps: 30
-        total_steps: 200
+        total_steps: 250
         checkpoint_strategy: linear
         checkpoint_steps: 5
-        bridge_max_per_ep: 1
-        bridge_position_top_k: 1
-        continuation_steps: 3
-        bridge_failed_episodes_only: false
-        bridge_require_full_continuation: true
+        # Bridge params (FTB-specific)
+        bridge_kl_lambda: 0.5
+        bridge_attempt_prob: 1.0
+        bridge_max_steps: 4
+        bridge_kl_max_per_ep: 1
+        bridge_kl_top_ratio: 0.3
     eval_tasksets:
       - name: sciworld_eval
         storage_type: file
-        path: data/scienceworld
+        path: {TCOD_DIR}/configs/scienceworld/sciworld_data
         split: test
-        total_steps: 1308
+        total_steps: 10
         task_selector:
-          selector_type: sequential
+          selector_type: random
+          seed: 42
         format:
           prompt_key: 'task_desc'
         rollout_args:
           temperature: 0.4
-          max_tokens: 512
           logprobs: 0
-    default_workflow_type: 'trinity.common.workflows.envs.TCOD.scienceworld.futurebridge_workflow.FutureBridgeNoBridgeExecutionScienceWorldWorkflow'
+    default_workflow_type: 'FutureBridgeNoBridgeExecutionScienceWorldWorkflow'
   trainer_input:
     experience_buffer:
-      name: scienceworld_no_bridge_execution_buffer
+      name: sciworld_rfb_b2f_v31_buffer
       storage_type: queue
-      path: 'sqlite:///outputs/buffers/scienceworld_no_bridge_execution_buffer.db'
+      path: 'sqlite:////tmp/tcod_buffer.db'
 
 explorer:
-  eval_interval: 9999
-  eval_on_startup: false
+  eval_interval: 5
   runner_per_model: 8
   max_timeout: 3600
   rollout_model:
@@ -82,23 +82,23 @@ explorer:
     enable_prefix_caching: false
     enforce_eager: true
     dtype: bfloat16
+    seed: 42
     gpu_memory_utilization: 0.82
     enable_chunked_prefill: false
-    enable_thinking: false
   auxiliary_models:
-    - model_path: models/Qwen3-8B-RL/scienceworld
+    - model_path: <teacher-model>
       engine_num: 1
       tensor_parallel_size: 2
       enable_prefix_caching: false
       enforce_eager: true
-      enable_thinking: false
       dtype: bfloat16
+      seed: 42
       max_model_len: 20480
-      max_prompt_tokens: 10240
+      max_prompt_tokens: 16384
       max_response_tokens: 512
   env_vars:
-    TMPDIR: outputs/tmp
-    RAY_TMPDIR: outputs/ray_tmp
+    TMPDIR: /tmp
+    RAY_TMPDIR: /dev/shm/ray_tmp
 
 synchronizer:
   sync_method: 'nccl'
@@ -107,7 +107,7 @@ synchronizer:
   sync_timeout: 3600
 
 trainer:
-  total_steps: 200
+  total_steps: 250
   save_interval: 50
   grad_clip: 1.0
   use_dynamic_bsz: true

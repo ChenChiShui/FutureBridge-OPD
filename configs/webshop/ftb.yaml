@@ -1,6 +1,6 @@
-project: "FutureBridge-OPD"
-name: "webshop_ftb_qwen3_32b_to_1_7b"
-checkpoint_root_dir: outputs/checkpoints
+project: "WEBSHOP_TCOD"
+name: "webshop_ftb"
+checkpoint_root_dir: {CHECKPOINT_ROOT}
 continue_from_checkpoint: false
 
 algorithm:
@@ -16,7 +16,7 @@ algorithm:
     lr: 1e-6
 
 model:
-  model_path: models/Qwen3-1.7B
+  model_path: <student-model>
   max_prompt_tokens: 10240
   max_response_tokens: 512
 
@@ -25,14 +25,14 @@ cluster:
   gpu_per_node: 8
 
 buffer:
-  total_steps: 200
+  total_steps: 250
   batch_size: 16
   train_batch_size: 64
   explorer_input:
     taskset:
       name: webshop
       storage_type: file
-      path: data/webshop/train.jsonl
+      path: {TCOD_DIR}/configs/webshop/webshop_data/train_500plus.jsonl
       split: train
       format:
         prompt_key: 'task_id'
@@ -42,43 +42,42 @@ buffer:
       workflow_args:
         temperature: 1.0
         max_env_steps: 15
-        total_steps: 200
+        total_steps: 250
+        # B2F curriculum: teacher generates the first k steps online;
+        # k decreases by 1 every 5 training steps
         checkpoint_strategy: linear
         checkpoint_steps: 5
+        # Bridge: triggered when student reward < 0.5
         bridge_reward_threshold: 0.5
-        bridge_position_top_k: 1
+        bridge_kl_lambda: 0.5
         bridge_max_per_ep: 1
-        continuation_steps: 3
-        bridge_failed_episodes_only: false
-        bridge_require_full_continuation: true
-        b2f_prefix_source: reference
     eval_tasksets:
       - name: webshop_eval
         storage_type: file
-        path: data/webshop/test.jsonl
+        path: {TCOD_DIR}/configs/webshop/webshop_data/test.jsonl
         split: test
-        total_steps: 100
+        total_steps: 50
         task_selector:
-          selector_type: sequential
+          selector_type: random
+          seed: 42
         format:
           prompt_key: 'task_id'
         rollout_args:
-          temperature: 0.4
-          max_tokens: 512
+          temperature: 0.0
+          max_tokens: 256
           logprobs: 0
         workflow_args:
-          temperature: 0.4
+          temperature: 0.0
           max_env_steps: 15
-          continuation_steps: 3
-    default_workflow_type: 'trinity.common.workflows.envs.TCOD.webshop.futurebridge_workflow.FutureBridgeWebShopWorkflow'
+    default_workflow_type: 'FutureBridgeWebShopWorkflow'
   trainer_input:
     experience_buffer:
-      name: webshop_ftb_qwen3_32b_to_1_7b_buffer
+      name: webshop_rfb_b2f_tcod_buffer
       storage_type: queue
-      path: 'sqlite:///outputs/buffers/webshop_ftb_qwen3_32b_to_1_7b_buffer.db'
+      path: 'sqlite:///webshop_rfb_b2f_tcod_buffer.db'
 
 explorer:
-  eval_interval: 9999
+  eval_interval: 10
   eval_on_startup: false
   runner_per_model: 8
   max_timeout: 3600
@@ -88,24 +87,24 @@ explorer:
     enable_prefix_caching: false
     enforce_eager: true
     dtype: bfloat16
+    seed: 42
     gpu_memory_utilization: 0.70
     enable_chunked_prefill: true
-    enable_thinking: false
   auxiliary_models:
-    - model_path: models/Qwen3-32B
+    - model_path: <teacher-model>
       engine_num: 1
       tensor_parallel_size: 2
       enable_prefix_caching: false
       enforce_eager: true
       dtype: bfloat16
+      seed: 42
       max_model_len: 20480
-      max_prompt_tokens: 10240
+      max_prompt_tokens: 16384
       max_response_tokens: 512
       gpu_memory_utilization: 0.90
-      enable_thinking: false
   env_vars:
-    TMPDIR: outputs/tmp
-    RAY_TMPDIR: outputs/ray_tmp
+    TMPDIR: /dev/shm/tmp
+    RAY_TMPDIR: /dev/shm/ray_tmp
 
 synchronizer:
   sync_method: 'nccl'
@@ -114,7 +113,7 @@ synchronizer:
   sync_timeout: 3600
 
 trainer:
-  total_steps: 200
+  total_steps: 250
   save_interval: 50
   grad_clip: 1.0
   use_dynamic_bsz: true

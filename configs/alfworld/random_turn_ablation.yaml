@@ -1,6 +1,6 @@
-project: "FutureBridge-OPD"
-name: "alfworld_random_turn_ablation_rl_teacher"
-checkpoint_root_dir: outputs/checkpoints
+project: "ALFWORLD_TCOD"
+name: "alfworld_random_bridge_tcod"
+checkpoint_root_dir: {CHECKPOINT_ROOT}
 continue_from_checkpoint: false
 
 algorithm:
@@ -16,7 +16,7 @@ algorithm:
     lr: 1e-6
 
 model:
-  model_path: models/Qwen3-4B
+  model_path: <student-model>
   max_prompt_tokens: 10240
   max_response_tokens: 512
 
@@ -25,14 +25,14 @@ cluster:
   gpu_per_node: 8
 
 buffer:
-  total_steps: 200
+  total_steps: 250
   batch_size: 16
   train_batch_size: 64
   explorer_input:
     taskset:
       name: alfworld
       storage_type: file
-      path: data/alfworld/train_expert.jsonl
+      path: {TCOD_DIR}/configs/alfworld/alfworld_data/train_expert.jsonl
       split: train
       format:
         prompt_key: 'game_file'
@@ -42,38 +42,43 @@ buffer:
       workflow_args:
         temperature: 1.0
         max_env_steps: 30
-        total_steps: 200
+        total_steps: 250
+        # B2F curriculum (teacher prefix → student suffix)，
         checkpoint_strategy: linear
-        checkpoint_steps: 5
-        bridge_position_top_k: 1
-        bridge_max_per_ep: 1
-        continuation_steps: 3
-        bridge_failed_episodes_only: false
-        bridge_require_full_continuation: true
+        checkpoint_steps: 5          #  # (config detail)
+        # Bridge params (B2F handoff bridge，v1
+        bridge_max_steps: 4
+        bridge_lambda: 0.5
+        bridge_attempt_prob: 1.0
+        bridge_n_candidates: 3
+        # Universal bridge：
+        # KL-Triggered Bridge params (no env replay)
+        bridge_kl_top_ratio: 0.3     # bridge top 30% highest-KL turns per episode
+        bridge_kl_lambda: 0.5       # bridge loss weight
+        bridge_kl_max_per_ep: 1     # max bridge turns per episode
     eval_tasksets:
       - name: alfworld_eval
         storage_type: file
-        path: data/alfworld/test_unseen.jsonl
+        path: {TCOD_DIR}/configs/alfworld/alfworld_data/test.jsonl
         split: test
-        total_steps: 134
+        total_steps: 10
         task_selector:
-          selector_type: sequential
+          selector_type: random
+          seed: 42
         format:
           prompt_key: 'game_file'
         rollout_args:
           temperature: 0.4
-          max_tokens: 512
           logprobs: 0
-    default_workflow_type: 'trinity.common.workflows.envs.TCOD.alfworld.random_turn_ablation.FutureBridgeRandomTurnAlfworldWorkflow'
+    default_workflow_type: 'FutureBridgeRandomTurnAlfworldWorkflow'
   trainer_input:
     experience_buffer:
-      name: alfworld_random_turn_buffer
+      name: alfworld_random_bridge_tcod_buffer
       storage_type: queue
-      path: 'sqlite:///outputs/buffers/alfworld_random_turn_buffer.db'
+      path: 'sqlite:////tmp/tcod_buffer.db'
 
 explorer:
-  eval_interval: 9999
-  eval_on_startup: false
+  eval_interval: 5
   runner_per_model: 8
   max_timeout: 3600
   rollout_model:
@@ -82,23 +87,23 @@ explorer:
     enable_prefix_caching: false
     enforce_eager: true
     dtype: bfloat16
+    seed: 42
     gpu_memory_utilization: 0.82
     enable_chunked_prefill: false
-    enable_thinking: false
   auxiliary_models:
-    - model_path: models/Qwen3-8B-RL/alfworld
+    - model_path: <teacher-model>
       engine_num: 1
       tensor_parallel_size: 2
       enable_prefix_caching: false
       enforce_eager: true
       dtype: bfloat16
+      seed: 42
       max_model_len: 20480
-      max_prompt_tokens: 10240
+      max_prompt_tokens: 16384
       max_response_tokens: 512
-      enable_thinking: false
   env_vars:
-    TMPDIR: outputs/tmp
-    RAY_TMPDIR: outputs/ray_tmp
+    TMPDIR: /dev/shm/alfworld_tmp
+    RAY_TMPDIR: /dev/shm/ray_tmp
 
 synchronizer:
   sync_method: 'nccl'
@@ -107,7 +112,7 @@ synchronizer:
   sync_timeout: 3600
 
 trainer:
-  total_steps: 200
+  total_steps: 250
   save_interval: 10
   grad_clip: 1.0
   use_dynamic_bsz: true

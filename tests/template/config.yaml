@@ -1,0 +1,73 @@
+project: unittest
+name: test
+mode: both
+checkpoint_root_dir: ''
+algorithm:
+  algorithm_type: ppo
+  repeat_times: 1
+  optimizer:
+    lr: 1e-6
+    lr_warmup_steps_ratio: 0.
+    lr_scheduler_type: constant  # select from constant/cosine
+  policy_loss_fn: ppo
+  policy_loss_fn_args:
+    clip_range: 0.2
+  advantage_fn: ppo
+  kl_penalty_fn: k3
+  kl_loss_fn: k2
+model:
+  model_path: ''
+  max_response_tokens: 2048
+  max_model_len: 4096
+cluster:  # 2 for explorer, 2 for trainer
+  node_num: ${oc.env:NODE_NUM,2}
+  gpu_per_node: ${oc.env:GPU_PER_NODE,2}
+buffer:
+  total_epochs: 1
+  batch_size: 4
+  explorer_input:
+    taskset:
+      name: taskset
+      storage_type: file
+      path: 'placeholder'
+      split: 'train'
+      enable_progress_bar: false
+explorer:
+  eval_interval: 100
+  runner_per_model: 8
+  rollout_model:
+    engine_num: 2
+    tensor_parallel_size: 1
+    dtype: bfloat16
+    seed: 42
+trainer:
+  trainer_type: verl
+  save_interval: 100
+  save_hf_checkpoint: never
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1
+  trainer_config:
+    actor_rollout_ref:
+      actor:
+        checkpoint:
+          load_contents: ['model', 'optimizer', 'extra']
+          save_contents: ['model', 'optimizer', 'extra']
+    critic:
+      optim:
+        lr: 1e-5
+      model:
+        use_remove_padding: false
+      cliprange_value: 0.5
+      checkpoint:
+        load_contents: ['model', 'optimizer', 'extra']
+        save_contents: ['model', 'optimizer', 'extra']
+    trainer:
+      max_actor_ckpt_to_keep: 1
+      max_critic_ckpt_to_keep: 1
+synchronizer:
+  sync_method: checkpoint
+  sync_interval: 10
+  sync_timeout: 1200
+  wait_for_checkpoint: false

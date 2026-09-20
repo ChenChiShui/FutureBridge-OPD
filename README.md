@@ -42,27 +42,28 @@ conda activate futurebridge
 python -m pip install --upgrade pip
 ```
 
-### TCOD and Python dependencies
+### Python dependencies
 
-Install a compatible [TCOD](https://github.com/kokolerk/TCOD) checkout, then
-install the runtime dependencies:
+This repository bundles the [TCOD](https://github.com/kokolerk/TCOD) training
+framework together with the FutureBridge-OPD workflows. Install the runtime
+dependencies and the framework:
 
 ```bash
-git clone https://github.com/kokolerk/TCOD.git
-cd TCOD
-python -m pip install -r ../FutureBridge-OPD/requirements.txt
+python -m pip install -r requirements_freeze.txt
 python -m pip install -e . --no-deps
 ```
 
 The main dependencies include:
 
-- `verl==0.7.0`
-- `ray[default]>=2.50.0`
-- `transformers>=4.51.0`
-- `datasets>=4.0.0`
-- `vllm>=0.10.2,<=0.14.1,!=0.12.0`
-- `flash-attn==2.8.1`
-- `wandb`, `tensorboard`, `omegaconf`
+- `verl`, `ray`, `transformers`, `datasets`
+- `vllm` — **all reported results were obtained with `vllm==0.8.5.post1`**,
+  which is pinned in `requirements_freeze.txt`. Evaluation can be sensitive
+  to the vLLM version: newer releases change generation-side behavior, and
+  the effect is more visible on benchmarks with long, weakly constrained
+  interactions (e.g., ScienceWorld) than on highly structured ones
+  (e.g., ALFWorld). We therefore recommend using the pinned version when
+  reproducing the paper numbers.
+- `flash-attn`, `wandb`, `tensorboard`, `omegaconf`
 - `sqlalchemy`, `psycopg2-binary`
 - `openai`, `jsonlines`
 

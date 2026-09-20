@@ -9,7 +9,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_ROOT = ROOT / "source"
+SOURCE_ROOT = ROOT / "trinity"
 JUNK_SUFFIXES = {
     ".csv",
     ".db",
@@ -29,18 +29,18 @@ def main() -> None:
     for relative_path in (
         "fig/motivation.png",
         "fig/pipeline.png",
-        "requirements.txt",
+        "requirements_freeze.txt",
     ):
         assert (ROOT / relative_path).is_file(), f"missing release file: {relative_path}"
 
-    requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+    requirements = (ROOT / "requirements_freeze.txt").read_text(encoding="utf-8")
     for dependency in (
-        "verl==0.7.0",
-        "ray[default]>=2.50.0",
-        "transformers>=4.51.0",
-        "datasets>=4.0.0",
-        "vllm>=0.10.2,<=0.14.1,!=0.12.0",
-        "flash-attn==2.8.1",
+        "verl==",
+        "ray==",
+        "transformers==",
+        "datasets==",
+        "vllm==0.8.5.post1",
+        "flash_attn",
     ):
         assert dependency in requirements, f"missing dependency: {dependency}"
 
@@ -117,7 +117,7 @@ def main() -> None:
     assert "% n_goals" not in source_text
     webshop_ftb = (
         SOURCE_ROOT
-        / "trinity/common/workflows/envs/TCOD/webshop/futurebridge_workflow.py"
+        / "common/workflows/envs/TCOD/webshop/futurebridge_workflow.py"
     ).read_text(encoding="utf-8")
     assert "_run_teacher_phase" not in webshop_ftb
     assert "prefix_actions=self._reference_prefix_actions" in webshop_ftb

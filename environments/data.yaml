@@ -1,0 +1,10 @@
+name: trinity_data
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pip:
+    - py-data-juicer
+    - agentscope
+    - transformers
+    - "-e ..[dev]"

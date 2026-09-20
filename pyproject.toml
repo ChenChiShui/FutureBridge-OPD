@@ -1,0 +1,146 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name =  "trinity-rft"
+version = "0.5.0.dev0"
+authors = [
+    {name="Trinity-RFT Team", email=""},
+]
+description = "Trinity-RFT: A Framework for Training Large Language Models with Reinforcement Fine-Tuning"
+readme = "README.md"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12"
+]
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "verl==0.7.0",
+    "ray[default]>=2.50.0",
+    "tensordict",
+    "wandb",
+    "omegaconf",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "networkx",
+    "latex2sympy2_extended",
+    "math_verify>=0.8.0",
+    "ninja",
+    "fire",
+    "streamlit",
+    "flask",
+    "requests",
+    "tensorboard",
+    "openai",
+    "jsonlines",
+    "sortedcontainers",
+    "word2number",
+    "transformers>=4.51.0",
+    "datasets>=4.0.0",
+]
+
+[project.scripts]
+trinity = "trinity.cli.launcher:main"
+
+[project.optional-dependencies]
+vllm = [
+    "vllm>=0.10.2,<=0.14.1,!=0.12.0",
+    # v0.12.0 has a huge performance regression so we exclude it
+    # v0.10.2 is the most stable version, but we allow up to 0.14.1 for new features
+]
+data = [
+    "py-data-juicer>=1.4.3"
+]
+agent = [
+    "agentscope>=1.0.12"
+]
+rm_gallery = [
+    "rm-gallery>=0.1.5"
+]
+dev = [
+    "pre-commit>=2.17.0",
+    "black>=23.7.0",
+    "flake8>=6.1.0",
+    "flake8-docstrings>=1.6.0",
+    "isort>=5.12.0",
+    "mypy>=1.7.0",
+    "pytest>=8.0.0",
+    "pytest-json-ctrf",
+    "parameterized",
+    "matplotlib",
+    "viztracer",
+]
+megatron = [
+    "megatron-core[mlm]==0.15.0",
+    # if you found "undefined symbol" error in transformer engine
+    # reinstall it with --no-build-isolation and `--no-cache-dir` flag
+    # "transformer_engine[pytorch]==2.10.0",
+
+    # Install mbridge from main branch (unreleased version)
+    # "mbridge @ git+",
+]
+tinker = [
+    "tinker; python_version >= '3.11'",
+]
+
+doc = [
+    "sphinx<9.0.0",
+    "sphinx-autobuild",
+    "sphinx-book-theme",
+    "myst-parser",
+    "sphinxcontrib-apidoc",
+    "sphinx-multiversion",
+    "sphinxcontrib-mermaid",
+]
+
+mm = [
+    "qwen-vl-utils",
+]
+
+flash_attn = [
+    "flash-attn==2.8.1"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["trinity*"]
+exclude = ["tests*", "docs*", "scripts*"]
+
+[tool.setuptools.package-data]
+my_package = ["*.md", "*.rst"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+    | \.git
+    | \.github
+    | \.vscode
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | build
+    | dist
+)/
+'''
+
+[tool.isort]
+known_third_party = ["wandb"]
+
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch", "numpy"]
+
+[project.urls]
+"Homepage" = ""
+"Documentation" = ""

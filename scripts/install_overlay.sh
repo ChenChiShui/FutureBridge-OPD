@@ -17,5 +17,5 @@ fi
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 release_root=$(CDPATH= cd -- "$script_dir/.." && pwd)
 
-cp -R "$release_root/source/trinity/." "$target_root/trinity/"
+cp -R "$release_root/trinity/." "$target_root/trinity/"
 echo "FutureBridge-OPD workflows installed into $target_workflows"
